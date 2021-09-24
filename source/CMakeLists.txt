@@ -5,8 +5,12 @@ add_executable(${PROJECT_NAME} main.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ECS)
 target_link_directories(${PROJECT_NAME} PUBLIC ECS)
 
-target_link_libraries(${PROJECT_NAME} EntityManager
-                                      ComponentManager
-                                      TypeIdGenerator
+target_link_libraries(${PROJECT_NAME}
+                                      EntityManager
+                                      ComponentStorage
+                                      System
                                       Bits
-                                      System)
+                                      TypeIdGenerator
+                                      ECS_errorlog
+                                      Entity
+                                   )

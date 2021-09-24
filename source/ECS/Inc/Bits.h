@@ -6,14 +6,18 @@
 
 namespace MyECS
 {
-    template<typename T, std::size_t count>
-    requires std::is_unsigned_v<T>
+    template<typename T, std::size_t count> requires std::is_unsigned_v<T>
     struct Bits
     {
         Bits() { _bits.fill(0); }
 
         void TrySet(size_t bitIndex);
+        void Set(size_t bitIndex);
         void TryReset(size_t bitIndex);
+        void Reset(size_t bitIndex);
+        bool IsAndNonZero(const Bits<T,count>& other) const;
+
+        void ResetAll();
 
         bool GetBitState(size_t bitIndex) const;
         bool TryGetBitState(size_t bitIndex) const;
@@ -21,6 +25,7 @@ namespace MyECS
         std::vector<uint32_t> GetOnes() const;
 
         Bits& operator|=(const Bits<T, count>& other);
+        Bits& operator&=(const Bits<T, count>& other);
 
         private:
             static constexpr uint8_t _typeSize = sizeof(T) * 8;
@@ -38,7 +43,16 @@ namespace MyECS
             template<typename size_type = std::size_t, size_type ...Indices>
             void GetSetBitsOnType(std::integer_sequence<size_type, Indices...>, T varFromBitset,
                                  std::vector<uint32_t>& result, uint32_t offset) const;
+
+            friend bool operator==(const Bits<T, count>& lhs, const Bits<T, count>& rhs)
+            {
+                for(std::size_t i{0}; i<lhs._bits.size(); ++i)
+                    if(lhs._bits[i] != rhs._bits[i]) return false;
+
+                return true;
+            }
     };
+
 }
 
 #include "Impl/Bits_impl.tpp"

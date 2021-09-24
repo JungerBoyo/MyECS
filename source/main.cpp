@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 #include <Inc/System.h>
 
+#include <fmt/core.h>
+
 #define ENTITY_COUNT 65536
 #define COMPONENTS_COUNT 16
 using BitsStorageType = uint8_t;
@@ -71,7 +73,7 @@ struct EntityManagerTest : public testing::Test
 
 TEST(EntityCreationTest, CreateEntitiesTest)
 {
-    MyECS::EntityManager<ENTITY_COUNT, COMPONENTS_COUNT, uint16_t> man;
+    MyECS::EntityManager<ENTITY_COUNT, COMPONENTS_COUNT, BitsStorageType> man;
     std::vector<MyECS::Entity> entities(ENTITY_COUNT);
 
     for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
@@ -111,42 +113,24 @@ TEST_F(EntityManagerTest, GetEntityComponentsTest)
     {
         if(man.HasComponents<CustomComponent2, CustomComponent3>(entity))
         {
-            auto[c2, c3] = man.GetEntityComponents<CustomComponent2, CustomComponent3>(entity);
-
-            ASSERT_NE(c2, nullptr);
-            ASSERT_NE(c3, nullptr);
-
-            c2 = nullptr;
-            c3 = nullptr;
+            ASSERT_EQ((man.GetEntityComponents<CustomComponent2, CustomComponent3>(entity).has_value()), true);
         }
 
         if(man.HasComponents<CustomComponent1, CustomComponent3>(entity))
         {
-            auto[c1, c3] = man.GetEntityComponents<CustomComponent1, CustomComponent3>(entity);
-
-            ASSERT_NE(c1, nullptr);
-            ASSERT_NE(c3, nullptr);
-
-            c1 = nullptr;
-            c3 = nullptr;
+            ASSERT_EQ((man.GetEntityComponents<CustomComponent1, CustomComponent3>(entity).has_value()), true);
         }
 
         if(man.HasComponents<std::string, float, int, double, CustomComponent3>(entity))
         {
-            const auto[str, f, i, d, c3] = man.GetEntityComponents<std::string, float, int, double, CustomComponent3>(entity);
-
-            ASSERT_NE(str, nullptr);
-            ASSERT_NE(f, nullptr);
-            ASSERT_NE(i, nullptr);
-            ASSERT_NE(d, nullptr);
-            ASSERT_NE(c3, nullptr);
+            ASSERT_EQ((man.GetEntityComponents<std::string, float, int, double, CustomComponent3>(entity).has_value()), true);
         }
     }
 }
-
+/* EXTRA SLOW
 TEST_F(EntityManagerTest, DetachEntityComponentsTest)
 {
-    for(const auto entity : entities)
+    for(MyECS::Entity entity{0}; entity<ENTITY_COUNT/4; ++entity)
     {
         if(man.HasComponents<CustomComponent2, CustomComponent3>(entity))
         {
@@ -154,6 +138,7 @@ TEST_F(EntityManagerTest, DetachEntityComponentsTest)
             ASSERT_EQ((man.HasComponents<CustomComponent2, CustomComponent3>(entity)), false);
         }
 
+        /*
         if(man.HasComponents<CustomComponent1, CustomComponent3>(entity))
         {
             man.DetachComponents<CustomComponent1, CustomComponent3>(entity);
@@ -166,8 +151,9 @@ TEST_F(EntityManagerTest, DetachEntityComponentsTest)
             ASSERT_EQ((man.HasComponents<std::string, float, int, double, CustomComponent3>(entity)), false);
         }
     }
-}
+}*/
 
+/* EXTRA SLOW
 TEST_F(EntityManagerTest, RemoveEntityTest)
 {
     for(const auto entity : entities)
@@ -176,6 +162,7 @@ TEST_F(EntityManagerTest, RemoveEntityTest)
         ASSERT_EQ((man.HasComponent<CustomComponent3>(entity)), false);
     }
 }
+*/
 
 TEST_F(EntityManagerTest, AddEntityComponents)
 {
@@ -196,26 +183,28 @@ TEST_F(EntityManagerTest, AddEntityComponents)
 
 TEST_F(EntityManagerTest, GetComponentsTest)
 {
-    const auto c1 = man.GetComponents<CustomComponent1>();
-    const auto c2 = man.GetComponents<CustomComponent2>();
-    const auto c3 = man.GetComponents<CustomComponent3>();
-    const auto str = man.GetComponents<std::string>();
-    const auto fl = man.GetComponents<float>();
-    const auto i = man.GetComponents<int>();
-    const auto db = man.GetComponents<double>();
-
-    ASSERT_NE(c1, nullptr);
-    ASSERT_NE(c2, nullptr);
-    ASSERT_NE(c3, nullptr);
-    ASSERT_NE(str, nullptr);
-    ASSERT_NE(fl, nullptr);
-    ASSERT_NE(i, nullptr);
-    ASSERT_NE(db, nullptr);
+    ASSERT_EQ(man.GetComponents<CustomComponent1>().has_value(), true);
+    ASSERT_EQ(man.GetComponents<CustomComponent2>().has_value(), true);
+    ASSERT_EQ(man.GetComponents<CustomComponent3>().has_value(), true);
+    ASSERT_EQ(man.GetComponents<std::string>().has_value(), true);
+    ASSERT_EQ(man.GetComponents<float>().has_value(), true);
+    ASSERT_EQ(man.GetComponents<int>().has_value(), true);
+    ASSERT_EQ(man.GetComponents<double>().has_value(), true);
 }
+
+
+class derivedSystem : public MyECS::System<64, uint64_t>
+{
+public:
+    derivedSystem()
+        : MyECS::System<64, uint64_t>(MyECS::SystemComponents<std::string>{})
+    {
+
+    }
+};
 
 int main()
 {
    testing::InitGoogleTest();
-
    return RUN_ALL_TESTS();
 }

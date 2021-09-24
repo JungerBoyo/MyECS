@@ -9,7 +9,7 @@ namespace MyECS
         struct ID
         {
             template<typename T>
-            static std::size_t ofType()
+            static std::size_t get()
             {
                 static std::size_t ID = counter++;
                 return ID;
@@ -19,7 +19,5 @@ namespace MyECS
                 static std::atomic<std::size_t> counter;
         };
 }
-
-
 
 #endif
