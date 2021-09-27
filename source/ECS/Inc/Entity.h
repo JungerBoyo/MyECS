@@ -6,6 +6,7 @@
 namespace MyECS
 {
     using Entity = uint32_t;
+    constexpr Entity InvalidEntity = UINT32_MAX;
 }
 
 #endif
