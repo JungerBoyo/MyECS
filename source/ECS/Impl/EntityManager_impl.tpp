@@ -163,7 +163,7 @@ namespace MyECS
             }
         #else
             (DetachComponent<Args>(entity), ...);
-            for(auto system : _systems) system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
+            for(auto& system : _systems) system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
         #endif
     }
 
@@ -356,11 +356,12 @@ namespace MyECS
                 ENTITY_ERROR(entity);
             }
         #else
+
             for(std::size_t i{0}; i<_componentsCount; ++i)
-                if(_componentStorages[i] && _componentStorages[i]->GetBits().IsAndNonZero(_entitiesComponentsSlots[entity]))
+                if(_componentStorages[i]->GetBits().IsAndNonZero(_entitiesComponentsSlots[entity]))
                     _componentStorages[i]->DeleteComponentInstance(entity);
 
-            for(auto system : _systems)
+            for(auto& system : _systems)
                 system->OnEntityRemove(entity);
 
             _entitiesStates.Reset(entity);

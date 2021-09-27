@@ -33,7 +33,8 @@ namespace MyECS
     }
 
     template<size_t components_capacity, typename BitsStorageType> requires std::is_unsigned_v<BitsStorageType>
-    void System<components_capacity, BitsStorageType>::OnEntityRemove(Entity entity)
+    void System<components_capacity, BitsStorageType>::
+    OnEntityRemove(Entity entity)
     {
         if(_managedEntities.contains(entity))
         {

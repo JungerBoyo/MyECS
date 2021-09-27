@@ -127,7 +127,7 @@ TEST_F(EntityManagerTest, GetEntityComponentsTest)
         }
     }
 }
-/* EXTRA SLOW
+
 TEST_F(EntityManagerTest, DetachEntityComponentsTest)
 {
     for(MyECS::Entity entity{0}; entity<ENTITY_COUNT/4; ++entity)
@@ -138,7 +138,7 @@ TEST_F(EntityManagerTest, DetachEntityComponentsTest)
             ASSERT_EQ((man.HasComponents<CustomComponent2, CustomComponent3>(entity)), false);
         }
 
-        /*
+
         if(man.HasComponents<CustomComponent1, CustomComponent3>(entity))
         {
             man.DetachComponents<CustomComponent1, CustomComponent3>(entity);
@@ -151,9 +151,9 @@ TEST_F(EntityManagerTest, DetachEntityComponentsTest)
             ASSERT_EQ((man.HasComponents<std::string, float, int, double, CustomComponent3>(entity)), false);
         }
     }
-}*/
+}
 
-/* EXTRA SLOW
+
 TEST_F(EntityManagerTest, RemoveEntityTest)
 {
     for(const auto entity : entities)
@@ -162,7 +162,7 @@ TEST_F(EntityManagerTest, RemoveEntityTest)
         ASSERT_EQ((man.HasComponent<CustomComponent3>(entity)), false);
     }
 }
-*/
+
 
 TEST_F(EntityManagerTest, AddEntityComponents)
 {
@@ -206,5 +206,8 @@ public:
 int main()
 {
    testing::InitGoogleTest();
+
+
+
    return RUN_ALL_TESTS();
 }
