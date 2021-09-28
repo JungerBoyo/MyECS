@@ -6,6 +6,32 @@
 
 namespace MyECS
 {
+#ifdef DEBUG_MyECS
+    template<typename T>
+    using ComponentsReturnType = std::optional<std::vector<T>*>;
+
+    template<typename T>
+    using ComponentsReturnType_const = std::optional<const std::vector<T>*>;
+
+    template<typename ...Args>
+    using EntityComponentsReturnType = std::optional<std::tuple<Args*...>>;
+
+    template<typename ...Args>
+    using EntityComponentsReturnType_const = std::optional<std::tuple<const Args*...>>;
+#else
+    template<typename T>
+    using ComponentsReturnType = std::vector<T>&;
+
+    template<typename T>
+    using ComponentsReturnType_const = const std::vector<T>&;
+
+    template<typename ...Args>
+    using EntityComponentsReturnType = std::tuple<Args&...>;
+
+    template<typename ...Args>
+    using EntityComponentsReturnType_const = std::tuple<const Args&...>;
+#endif
+
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
     class EntityManager
@@ -47,16 +73,16 @@ namespace MyECS
             bool HasComponents(Entity) const;
 
             template<typename ...Args>
-            std::optional<std::tuple<Args*...>> GetEntityComponents(Entity);
+            EntityComponentsReturnType<Args...> GetEntityComponents(Entity);
 
             template<typename ...Args>
-            std::optional<std::tuple<const Args*...>> GetEntityComponents(Entity) const;
+            EntityComponentsReturnType_const<Args...> GetEntityComponents(Entity) const;
 
             template<typename T>
-            std::optional<std::vector<T>*> GetComponents();
+            ComponentsReturnType<T> GetComponents();
 
             template<typename T>
-            std::optional<const std::vector<T>*> GetComponents() const;
+            ComponentsReturnType_const<T> GetComponents() const;
 
             void RemoveEntity(Entity);
 

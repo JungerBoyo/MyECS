@@ -16,6 +16,7 @@ namespace MyECS
         void TryReset(size_t bitIndex);
         void Reset(size_t bitIndex);
         bool IsAndNonZero(const Bits<T,count>& other) const;
+        bool DoesAndEqualThis(const Bits<T,count>& other) const;
 
         void ResetAll();
 

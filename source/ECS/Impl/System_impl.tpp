@@ -17,7 +17,7 @@ namespace MyECS
     void System<components_capacity, BitsStorageType>::
     OnEntityUpdate(Entity entity, const Bits<BitsStorageType, components_capacity>& entityComponentsBits)
     {
-        bool componentsMatch = (entityComponentsBits == _managedComponentsBits);
+        bool componentsMatch = _managedComponentsBits.DoesAndEqualThis(entityComponentsBits);
         bool entityExists = _managedEntities.contains(entity);
 
         if(!entityExists && componentsMatch)

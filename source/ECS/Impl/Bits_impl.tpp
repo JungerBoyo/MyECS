@@ -105,6 +105,15 @@ namespace MyECS
 
         return false;
     }
+
+    template<typename T, std::size_t count> requires std::is_unsigned_v<T>
+    bool Bits<T, count>::DoesAndEqualThis(const Bits <T, count> &other) const
+    {
+        for(std::size_t i{0}; i<_bits.size(); ++i)
+            if((_bits[i] & other._bits[i]) != _bits[i]) return false;
+
+        return true;
+    }
 }
 
 #endif

@@ -2,6 +2,7 @@
 #define MYECS_ENTITYMANAGER_IMPL_TPP
 
 #include <Inc/TypeIdGenerator.h>
+#include "Inc/EntityManager.h"
 
 #ifdef DEBUG_MyECS
 #include "Inc/ECS_errorlog.h"
@@ -83,13 +84,10 @@ namespace MyECS
             {
                 (_entitiesComponentsSlots[entity].Set(AddComponent(entity, std::forward<Args>(components))), ...);
 
-                for(auto system : _systems)
+                for(auto& system : _systems)
                     system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
             }
-            else
-            {
-                ENTITY_ERROR(entity);
-            }
+            else { ENTITY_ERROR(entity); }
         #else
             (_entitiesComponentsSlots[entity].Set(AddComponent(entity, std::forward<Args>(components))), ...);
 
@@ -116,18 +114,12 @@ namespace MyECS
 
                 if(!_entitiesComponentsSlots[entity].GetBitState(ID::get<T>()))
                 {
-                    StorageCaster<T>(_componentStorages[ID::get<T>()].get())->AddComponentInstance(entity, std::forward<T>(component));
+                    StorageCaster<T>()->AddComponentInstance(entity, std::forward<T>(component));
                     return ID::get<T>();
                 }
-                else
-                {
-                    ENTITY_ALREADY_HAVE_COMP_ERROR(entity, T);
-                }
+                else { ENTITY_ALREADY_HAVE_COMP_ERROR(entity, T); }
             }
-            else
-            {
-                COMPONENT_COUNT_EXCEEDED_ERROR();
-            }
+            else { COMPONENT_COUNT_EXCEEDED_ERROR(); }
 
             return 0;
         #else
@@ -154,13 +146,10 @@ namespace MyECS
             {
                 (DetachComponent<Args>(entity), ...);
 
-                for(auto system : _systems)
+                for(auto& system : _systems)
                     system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
             }
-            else
-            {
-                ENTITY_ERROR(entity);
-            }
+            else { ENTITY_ERROR(entity); }
         #else
             (DetachComponent<Args>(entity), ...);
             for(auto& system : _systems) system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
@@ -180,15 +169,9 @@ namespace MyECS
                     _componentStorages[ID::get<T>()]->DeleteComponentInstance(entity);
                     _entitiesComponentsSlots[entity].Reset(ID::get<T>());
                 }
-                else
-                {
-                    ENTITY_DOES_NOT_HAVE_COMPONENT_ERROR(entity, T);
-                }
+                else { ENTITY_DOES_NOT_HAVE_COMPONENT_ERROR(entity, T); }
             }
-            else
-            {
-                COMPONENT_COUNT_EXCEEDED_ERROR();
-            }
+            else { COMPONENT_COUNT_EXCEEDED_ERROR(); }
         #else
             _componentStorages[ID::get<T>()]->DeleteComponentInstance(entity);
             _entitiesComponentsSlots[entity].Reset(ID::get<T>());
@@ -206,14 +189,11 @@ namespace MyECS
                 if(ID::get<T>() < components_capacity)
                     return _entitiesComponentsSlots[entity].GetBitState(ID::get<T>());
                 else
-                {
-                    COMPONENT_COUNT_EXCEEDED_ERROR();
-                }
+                { COMPONENT_COUNT_EXCEEDED_ERROR(); }
             }
             else
-            {
-                ENTITY_ERROR(entity);
-            }
+            { ENTITY_ERROR(entity); }
+
             return false;
         #else
             return _entitiesComponentsSlots[entity].GetBitState(ID::get<T>());
@@ -230,15 +210,9 @@ namespace MyECS
             {
                 if(((ID::get<Args>() < components_capacity) && ...))
                     return (_entitiesComponentsSlots[entity].GetBitState(ID::get<Args>()) && ...);
-                else
-                {
-                    COMPONENT_COUNT_EXCEEDED_ERROR();
-                }
+                else { COMPONENT_COUNT_EXCEEDED_ERROR(); }
             }
-            else
-            {
-                ENTITY_ERROR(entity);
-            }
+            else { ENTITY_ERROR(entity); }
 
             return false;
         #else
@@ -249,7 +223,7 @@ namespace MyECS
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
     template<typename ...Args>
-    std::optional<std::tuple<Args*...>>
+    EntityComponentsReturnType<Args...>
     EntityManager<entities_capacity, components_capacity, BitsStorageType>::GetEntityComponents(Entity entity)
     {
         #ifdef DEBUG_MyECS
@@ -262,29 +236,20 @@ namespace MyECS
                     else
                         return {};
                 }
-                else
-                {
-                    COMPONENT_COUNT_EXCEEDED_ERROR();
-                }
+                else { COMPONENT_COUNT_EXCEEDED_ERROR(); }
             }
-            else
-            {
-                ENTITY_ERROR(entity);
-            }
+            else { ENTITY_ERROR(entity); }
 
             return {};
         #else
-            if((_entitiesComponentsSlots[entity].GetBitState(ID::get<Args>()) && ...))
-                return std::tuple<Args*...>{StorageCaster<Args>()->GetByEntity(entity)...};
-            else
-                return {};
+            return {StorageCaster<Args>()->GetByEntity(entity)...};
         #endif
     }
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
     template<typename... Args>
-    std::optional<std::tuple<const Args*...>>
+    EntityComponentsReturnType_const<Args...>
     EntityManager<entities_capacity, components_capacity, BitsStorageType>::GetEntityComponents(Entity entity) const
     {
         #ifdef DEBUG_MyECS
@@ -297,22 +262,13 @@ namespace MyECS
                     else
                         return {};
                 }
-                else
-                {
-                    COMPONENT_COUNT_EXCEEDED_ERROR();
-                }
+                else { COMPONENT_COUNT_EXCEEDED_ERROR(); }
             }
-            else
-            {
-                ENTITY_ERROR(entity);
-            }
+            else { ENTITY_ERROR(entity); }
 
             return {};
         #else
-            if((_entitiesComponentsSlots[entity].GetBitState(ID::get<Args>()) && ...))
-                return std::tuple<const Args*...>{StorageCaster<Args>()->GetByEntity(entity)...};
-            else
-                return {};
+            return {StorageCaster<Args>()->GetByEntity(entity)...};
         #endif
     }
 
@@ -343,7 +299,7 @@ namespace MyECS
                     if(_componentStorages[i] && _componentStorages[i]->GetBits().IsAndNonZero(_entitiesComponentsSlots[entity]))
                         _componentStorages[i]->DeleteComponentInstance(entity);
 
-                for(auto system : _systems)
+                for(auto& system : _systems)
                     system->OnEntityRemove(entity);
 
                 _entitiesStates.Reset(entity);
@@ -351,10 +307,7 @@ namespace MyECS
                 _freeEntities.push_back(entity);
                 _activeEntities.erase(entity);
             }
-            else
-            {
-                ENTITY_ERROR(entity);
-            }
+            else { ENTITY_ERROR(entity); }
         #else
 
             for(std::size_t i{0}; i<_componentsCount; ++i)
@@ -373,59 +326,44 @@ namespace MyECS
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename T> std::optional<const std::vector<T>*>
+    template<typename T> ComponentsReturnType_const<T>
     EntityManager<entities_capacity, components_capacity, BitsStorageType>::GetComponents() const
     {
         #ifdef DEBUG_MyECS
             if(ID::get<T>() < components_capacity)
             {
                 if(_componentStorages[ID::get<T>()])
-                    return &StorageCaster<T>(_componentStorages[ID::get<T>()].get())->_componentInstances;
+                    return &StorageCaster<T>()->_componentInstances;
                 else
-                {
-                    NON_EXISTENT_COMPONENT_ERROR(T);
-                }
+                { NON_EXISTENT_COMPONENT_ERROR(T); }
             }
-            else
-            {
-                COMPONENT_COUNT_EXCEEDED_ERROR();
-            }
+            else { COMPONENT_COUNT_EXCEEDED_ERROR(); }
 
             return {};
         #else
-            if(_componentStorages[ID::get<T>()])
-                return &StorageCaster<T>()->_componentInstances;
-            else
-                return {};
+            return StorageCaster<T>()->_componentInstances;
         #endif
     }
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename T> std::optional<std::vector<T>*>
+    template<typename T> ComponentsReturnType<T>
     EntityManager<entities_capacity, components_capacity, BitsStorageType>::GetComponents()
     {
         #ifdef DEBUG_MyECS
             if(ID::get<T>() < components_capacity)
             {
                 if(_componentStorages[ID::get<T>()])
-                    return &StorageCaster<T>(_componentStorages[ID::get<T>()].get())->_componentInstances;
+                    return &StorageCaster<T>()->_componentInstances;
                 else
-                {
-                    NON_EXISTENT_COMPONENT_ERROR(T);
-                }
+                { NON_EXISTENT_COMPONENT_ERROR(T); }
             }
             else
-            {
-                COMPONENT_COUNT_EXCEEDED_ERROR();
-            }
+            { COMPONENT_COUNT_EXCEEDED_ERROR(); }
 
             return {};
         #else
-            if(_componentStorages[ID::get<T>()])
-                return &StorageCaster<T>()->_componentInstances;
-            else
-                return {};
+            return StorageCaster<T>()->_componentInstances;
         #endif
     }
 }
