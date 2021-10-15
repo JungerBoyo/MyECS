@@ -1,3 +1,5 @@
+//#define DEBUG_MyECS
+
 #include <Inc/EntityManager.h>
 #include <gtest/gtest.h>
 #include <Inc/System.h>
@@ -47,6 +49,12 @@ struct CustomComponent4
     std::vector<int> vec;
 };
 
+struct CustomComponent5NotThreadSafe
+{
+    CustomComponent5NotThreadSafe() : vec(32) {  }
+    std::vector<int> vec;
+};
+
 struct EntityManagerTest : public testing::Test
 {
     MyECS::EntityManager<ENTITY_COUNT, COMPONENTS_COUNT, BitsStorageType> man;
@@ -57,13 +65,13 @@ struct EntityManagerTest : public testing::Test
         entities.reserve(ENTITY_COUNT);
 
         for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
-            entities.push_back(man.CreateEntity<CustomComponent2, CustomComponent3>({}, {}));
+            entities.push_back(man.CreateEntity<true, CustomComponent2, CustomComponent3>({}, {}));
 
         for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
-            entities.push_back(man.CreateEntity<CustomComponent1, CustomComponent3>({}, {}));
+            entities.push_back(man.CreateEntity<true, CustomComponent1, CustomComponent3>({}, {}));
 
         for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
-            entities.push_back(man.CreateEntity<std::string, float, int, double, CustomComponent3>("", 0.0f, 1, 0.0, {}));
+            entities.push_back(man.CreateEntity<true, std::string, float, int, double, CustomComponent3>("", 0.0f, 1, 0.0, {}));
 
         fmt::print("[Google Test] Test set up\n");
     }
@@ -74,37 +82,39 @@ struct EntityManagerTest : public testing::Test
 TEST(EntityCreationTest, CreateEntitiesTest)
 {
     MyECS::EntityManager<ENTITY_COUNT, COMPONENTS_COUNT, BitsStorageType> man;
-    std::vector<MyECS::Entity> entities(ENTITY_COUNT);
+    std::vector<MyECS::Entity> entities; entities.reserve(ENTITY_COUNT);
 
     for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
     {
-        entities.push_back(man.CreateEntity<CustomComponent2, CustomComponent3>({}, {}));
+        entities.push_back(man.CreateEntity<true, CustomComponent2, CustomComponent3>({}, {}));
         ASSERT_EQ((man.HasComponents<CustomComponent2, CustomComponent3>(entities.back())), true);
     }
 
+    const auto& test = man.GetComponents<CustomComponent2>();
+
     for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
     {
-        entities.push_back(man.CreateEntity<CustomComponent1, CustomComponent3>({}, {}));
+        entities.push_back(man.CreateEntity<true, CustomComponent1, CustomComponent3>({}, {}));
         ASSERT_EQ((man.HasComponents<CustomComponent1, CustomComponent3>(entities.back())), true);
     }
 
     for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
     {
-        entities.push_back(man.CreateEntity<std::string, float, int, double, CustomComponent3>("", 0.0f, 1, 0.0, {}));
+        entities.push_back(man.CreateEntity<true, std::string, float, int, double, CustomComponent3>("", 0.0f, 1, 0.0, {}));
         ASSERT_EQ((man.HasComponents<std::string, float, int, double, CustomComponent3>(entities.back())), true);
     }
 
     for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
     {
-        entities.push_back(man.CreateEntity<CustomComponent3>({}));
-        ASSERT_EQ((man.HasComponents<CustomComponent3>(entities.back())), true);
+        entities.push_back(man.CreateEntity<false, CustomComponent5NotThreadSafe>({}));
+        ASSERT_EQ((man.HasComponents<CustomComponent5NotThreadSafe>(entities.back())), true);
     }
 }
 
 TEST_F(EntityManagerTest, HasComponentTest)
 {
     for(const auto entity : entities)
-        ASSERT_EQ((man.HasComponent<CustomComponent3>(entity)), true);
+        ASSERT_EQ((man.HasComponent<CustomComponent3>(entity)) || (man.HasComponent<CustomComponent5NotThreadSafe>(entity)), true);
 }
 
 TEST_F(EntityManagerTest, GetEntityComponentsTest)
@@ -168,16 +178,16 @@ TEST_F(EntityManagerTest, AddEntityComponents)
 {
     for(const auto entity : entities)
     {
-        man.AddComponents<CustomComponent4>(entity, {});
+        man.AddComponents<true, CustomComponent4>(entity, {});
         ASSERT_EQ((man.HasComponent<CustomComponent4>(entity)), true);
 
-        man.AddComponents<std::array<int,4>, std::array<float, 23>,
+        man.AddComponents<true, std::array<int,4>, std::array<float, 23>,
                          std::vector<std::string>>(entity, {0,0,0,0}, {}, std::vector<std::string>());
 
         ASSERT_EQ
         ((man.HasComponents< std::array<int,4>, std::array<float, 23>, std::vector<std::string> >(entity)), true);
 
-        ASSERT_EQ((man.HasComponent<CustomComponent3>(entity)), true);
+        ASSERT_EQ((man.HasComponent<CustomComponent3>(entity)) || (man.HasComponent<CustomComponent5NotThreadSafe>(entity)), true);
     }
 }
 

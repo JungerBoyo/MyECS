@@ -22,7 +22,7 @@ namespace MyECS
 {
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename... Args>
+    template<bool ThreadSafeComponents, typename... Args>
     Entity EntityManager<entities_capacity, components_capacity, BitsStorageType>::CreateEntity(Args&&... components)
     {
         #ifdef DEBUG_MyECS
@@ -47,7 +47,7 @@ namespace MyECS
 
         _entitiesStates.Set(entity);
         _activeEntities[entity] = entity;
-       (_entitiesComponentsSlots[entity].Set(AddComponent(entity, std::forward<Args>(components))), ...);
+       (_entitiesComponentsSlots[entity].Set(AddComponent<ThreadSafeComponents>(entity, std::forward<Args>(components))), ...);
 
         for(auto& system : _systems)
             system->OnEntityAdd(entity, _entitiesComponentsSlots[entity]);
@@ -76,7 +76,7 @@ namespace MyECS
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename... Args>
+    template<bool ThreadSafeComponents, typename... Args>
     void EntityManager<entities_capacity, components_capacity, BitsStorageType>::AddComponents(Entity entity, Args &&... components)
     {
         #ifdef DEBUG_MyECS
@@ -89,7 +89,7 @@ namespace MyECS
             }
             else { ENTITY_ERROR(entity); }
         #else
-            (_entitiesComponentsSlots[entity].Set(AddComponent(entity, std::forward<Args>(components))), ...);
+            (_entitiesComponentsSlots[entity].Set(AddComponent<ThreadSafeComponents>(entity, std::forward<Args>(components))), ...);
 
             for(auto& system : _systems)
                 system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
@@ -98,7 +98,7 @@ namespace MyECS
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename T>
+    template<bool ThreadSafeComponent, typename T>
     std::size_t
     EntityManager<entities_capacity, components_capacity, BitsStorageType>::AddComponent(Entity entity, T&& component)
     {
@@ -125,12 +125,12 @@ namespace MyECS
         #else
             if(!_activeComponentsMask.GetBitState(ID::get<T>()))
             {
-                _componentStorages[ID::get<T>()] = std::make_unique<ComponentsStorage<components_capacity, BitsStorageType, T>>();
+                _componentStorages[ID::get<T>()] = std::make_unique<ComponentsStorage<components_capacity, BitsStorageType, T, ThreadSafeComponent>>();
                 ++_componentsCount;
                 _activeComponentsMask.Set(ID::get<T>());
             }
 
-            StorageCaster<T>()->AddComponentInstance(entity, std::forward<T>(component));
+            StorageCaster<T, ThreadSafeComponent>()->AddComponentInstance(entity, std::forward<T>(component));
             return ID::get<T>();
         #endif
 
@@ -242,13 +242,13 @@ namespace MyECS
 
             return {};
         #else
-            return {StorageCaster<Args>()->GetByEntity(entity)...};
+            return {StorageCaster<Args, true>()->GetByEntity(entity)...};
         #endif
     }
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename... Args>
+    template<bool ThreadSafeComponents, typename... Args>
     EntityComponentsReturnType_const<Args...>
     EntityManager<entities_capacity, components_capacity, BitsStorageType>::GetEntityComponents(Entity entity) const
     {
@@ -268,7 +268,7 @@ namespace MyECS
 
             return {};
         #else
-            return {StorageCaster<Args>()->GetByEntity(entity)...};
+            return {StorageCaster<Args, ThreadSafeComponents>()->GetByEntity(entity)...};
         #endif
     }
 
@@ -326,7 +326,7 @@ namespace MyECS
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename T> ComponentsReturnType_const<T>
+    template<bool ThreadSafeComponents, typename T> ComponentsReturnType_const<T>
     EntityManager<entities_capacity, components_capacity, BitsStorageType>::GetComponents() const
     {
         #ifdef DEBUG_MyECS
@@ -341,7 +341,7 @@ namespace MyECS
 
             return {};
         #else
-            return StorageCaster<T>()->_componentInstances;
+            return StorageCaster<T, ThreadSafeComponents>()->_componentInstances;
         #endif
     }
 
@@ -363,7 +363,7 @@ namespace MyECS
 
             return {};
         #else
-            return StorageCaster<T>()->_componentInstances;
+            return StorageCaster<T, true>()->_componentInstances;
         #endif
     }
 }

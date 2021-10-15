@@ -47,7 +47,7 @@ namespace MyECS
     void System<components_capacity, BitsStorageType>::
     OnEntityAdd(Entity entity, const Bits <BitsStorageType, components_capacity> &entityComponentsBits)
     {
-        if(entityComponentsBits == _managedComponentsBits)
+        if(_managedComponentsBits.DoesAndEqualThis(entityComponentsBits))
         {
             _managedEntities.emplace(std::make_pair(entity, entity));
             OnEntityAdditionAction(entity);

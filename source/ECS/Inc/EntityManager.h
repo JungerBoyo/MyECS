@@ -36,10 +36,10 @@ namespace MyECS
     requires std::is_unsigned_v<BitsStorageType>
     class EntityManager
     {
-        template<typename T> auto
+        template<typename T, bool ThreadSafeStorage> auto
         StorageCaster()
         {
-            return static_cast<ComponentsStorage<components_capacity, BitsStorageType, T>*>
+            return static_cast<ComponentsStorage<components_capacity, BitsStorageType, T, ThreadSafeStorage>*>
             (_componentStorages[ID::get<T>()].get());
         }
 
@@ -57,10 +57,10 @@ namespace MyECS
             requires std::is_base_of_v<System<components_capacity, BitsStorageType>, DerivedSystemType>
             DerivedSystemType* CreateSystem();
 
-            template<typename ...Args>
+            template<bool ThreadSafeComponents, typename ...Args>
             Entity CreateEntity(Args&&... components);
 
-            template<typename ...Args>
+            template<bool ThreadSafeComponents, typename ...Args>
             void AddComponents(Entity, Args&&... components);
 
             template<typename ...Args>
@@ -75,19 +75,19 @@ namespace MyECS
             template<typename ...Args>
             EntityComponentsReturnType<Args...> GetEntityComponents(Entity);
 
-            template<typename ...Args>
+            template<bool ThreadSafeComponents, typename ...Args>
             EntityComponentsReturnType_const<Args...> GetEntityComponents(Entity) const;
 
             template<typename T>
             ComponentsReturnType<T> GetComponents();
 
-            template<typename T>
+            template<bool ThreadSafeComponents, typename T>
             ComponentsReturnType_const<T> GetComponents() const;
 
             void RemoveEntity(Entity);
 
         private:
-            template<typename T>
+            template<bool ThreadSafeComponent, typename T>
             std::size_t AddComponent(Entity, T&& component);
 
             template<typename T>
