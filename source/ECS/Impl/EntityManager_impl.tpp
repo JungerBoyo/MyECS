@@ -242,7 +242,7 @@ namespace MyECS
 
             return {};
         #else
-            return {StorageCaster<Args, true>()->GetByEntity(entity)...};
+            return {StorageCaster<Args, false>()->GetByEntity(entity)...};
         #endif
     }
 
@@ -363,7 +363,7 @@ namespace MyECS
 
             return {};
         #else
-            return StorageCaster<T, true>()->_componentInstances;
+            return StorageCaster<T, false>()->_componentInstances;
         #endif
     }
 }

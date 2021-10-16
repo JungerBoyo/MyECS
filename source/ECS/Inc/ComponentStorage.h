@@ -41,7 +41,7 @@ namespace MyECS
 
 
     template<size_t components_capacity, typename BitsStorageType, typename T>
-    class ComponentsStorage<components_capacity, BitsStorageType, T, false> : public BaseComponentsStorage<components_capacity, BitsStorageType>
+    class ComponentsStorage<components_capacity, BitsStorageType, T, true> : public BaseComponentsStorage<components_capacity, BitsStorageType>
     {
         template<size_t, size_t, typename BitsStorageType_> requires std::is_unsigned_v<BitsStorageType_>
         friend class EntityManager;
@@ -104,7 +104,7 @@ namespace MyECS
     };
 
     template<size_t components_capacity, typename BitsStorageType, typename T>
-    class ComponentsStorage<components_capacity, BitsStorageType, T, true> : public BaseComponentsStorage<components_capacity, BitsStorageType>
+    class ComponentsStorage<components_capacity, BitsStorageType, T, false> : public BaseComponentsStorage<components_capacity, BitsStorageType>
     {
         template<size_t, size_t, typename BitsStorageType_> requires std::is_unsigned_v<BitsStorageType_>
         friend class EntityManager;
