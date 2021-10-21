@@ -57,12 +57,13 @@ namespace MyECS
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename DerivedSystemType, typename ...ManagedTypes>
+    template<typename DerivedSystemType, typename ...ManagedTypes, template <typename...> class T, typename ...Args>
     requires std::is_base_of_v<System <components_capacity, BitsStorageType>, DerivedSystemType>
-    DerivedSystemType* EntityManager<entities_capacity, components_capacity, BitsStorageType>::CreateSystem()
+    DerivedSystemType* EntityManager<entities_capacity, components_capacity, BitsStorageType>::
+    CreateSystem(T<ManagedTypes...>, Args&&... args)
     {
-        auto system = new DerivedSystemType();
-        _systems.push_back(system);
+        auto system = new DerivedSystemType(std::forward<Args>(args)...);
+        _systems.push_back(std::unique_ptr<System<components_capacity, BitsStorageType>>(system));
 
         auto managedEntities = GetEntitiesWithComponents<ManagedTypes...>();
         std::unordered_map<Entity, Entity> managedEntitiesMap;

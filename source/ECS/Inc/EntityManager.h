@@ -53,9 +53,10 @@ namespace MyECS
             EntityManager(const EntityManager&) = delete;
             EntityManager& operator=(const EntityManager&) = delete;
 
-            template<typename DerivedSystemType, typename ...ManagedTypes>
+            template<typename DerivedSystemType, typename ...ManagedTypes, template <typename...> class T,
+                    typename ...Args>
             requires std::is_base_of_v<System<components_capacity, BitsStorageType>, DerivedSystemType>
-            DerivedSystemType* CreateSystem();
+            DerivedSystemType* CreateSystem(T<ManagedTypes...>, Args&&...);
 
             template<bool ThreadSafeComponents, typename ...Args>
             Entity CreateEntity(Args&&... components);
