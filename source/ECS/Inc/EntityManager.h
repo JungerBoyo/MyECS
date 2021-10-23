@@ -65,8 +65,8 @@ namespace MyECS
             template<bool ThreadSafeComponents, typename ...Args>
             void AddComponents(Entity, Args&&... components);
 
-            template<typename ...Args>
-            void PreinitThreadSafeComponentStorages();
+            template<typename T>
+            void PreinitThreadSafeComponentStorage();
 
             template<typename ...Args>
             void DetachComponents(Entity);

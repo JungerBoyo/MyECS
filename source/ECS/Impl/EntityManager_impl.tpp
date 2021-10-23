@@ -330,10 +330,15 @@ namespace MyECS
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
-    template<typename... Args>
-    void EntityManager<entities_capacity, components_capacity, BitsStorageType>::PreinitializeThreadSafeComponentStorages()
+    template<typename T>
+    void EntityManager<entities_capacity, components_capacity, BitsStorageType>::PreinitThreadSafeComponentStorage()
     {
-
+        if(!_activeComponentsMask.GetBitState(ID::get<T>()))
+        {
+            _componentStorages[ID::get<T>()] = std::make_unique<ComponentsStorage<components_capacity, BitsStorageType, T, true>>();
+            ++_componentsCount;
+            _activeComponentsMask.Set(ID::get<T>());
+        }
     }
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
