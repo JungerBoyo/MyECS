@@ -32,12 +32,13 @@ namespace MyECS
     using EntityComponentsReturnType_const = std::tuple<const Args&...>;
 #endif
 
+
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
     requires std::is_unsigned_v<BitsStorageType>
     class EntityManager
     {
         template<typename T, bool ThreadSafeStorage> auto
-        StorageCaster()
+        StorageCaster() const
         {
             return static_cast<ComponentsStorage<components_capacity, BitsStorageType, T, ThreadSafeStorage>*>
             (_componentStorages[ID::get<T>()].get());
@@ -63,6 +64,9 @@ namespace MyECS
 
             template<bool ThreadSafeComponents, typename ...Args>
             void AddComponents(Entity, Args&&... components);
+
+            template<typename ...Args>
+            void PreinitThreadSafeComponentStorages();
 
             template<typename ...Args>
             void DetachComponents(Entity);

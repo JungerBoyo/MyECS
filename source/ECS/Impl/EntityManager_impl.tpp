@@ -124,11 +124,14 @@ namespace MyECS
 
             return 0;
         #else
-            if(!_activeComponentsMask.GetBitState(ID::get<T>()))
+            if constexpr(!ThreadSafeComponent)
             {
-                _componentStorages[ID::get<T>()] = std::make_unique<ComponentsStorage<components_capacity, BitsStorageType, T, ThreadSafeComponent>>();
-                ++_componentsCount;
-                _activeComponentsMask.Set(ID::get<T>());
+                if(!_activeComponentsMask.GetBitState(ID::get<T>()))
+                {
+                    _componentStorages[ID::get<T>()] = std::make_unique<ComponentsStorage<components_capacity, BitsStorageType, T, ThreadSafeComponent>>();
+                    ++_componentsCount;
+                    _activeComponentsMask.Set(ID::get<T>());
+                }
             }
 
             StorageCaster<T, ThreadSafeComponent>()->AddComponentInstance(entity, std::forward<T>(component));
@@ -323,6 +326,14 @@ namespace MyECS
             _freeEntities.push_back(entity);
             _activeEntities.erase(entity);
         #endif
+    }
+
+    template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
+    requires std::is_unsigned_v<BitsStorageType>
+    template<typename... Args>
+    void EntityManager<entities_capacity, components_capacity, BitsStorageType>::PreinitializeThreadSafeComponentStorages()
+    {
+
     }
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>

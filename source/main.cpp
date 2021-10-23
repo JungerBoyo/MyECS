@@ -62,6 +62,8 @@ struct EntityManagerTest : public testing::Test
 
     void SetUp() override
     {
+
+
         entities.reserve(ENTITY_COUNT);
 
         for(uint32_t i{0}; i<ENTITY_COUNT/4; ++i)
