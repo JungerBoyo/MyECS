@@ -92,8 +92,20 @@ namespace MyECS
         #else
             (_entitiesComponentsSlots[entity].Set(AddComponent<ThreadSafeComponents>(entity, std::forward<Args>(components))), ...);
 
-            for(auto& system : _systems)
-                system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
+            if constexpr(!ThreadSafeComponents)
+            {
+                for(auto& system : _systems)
+                    system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
+            }
+            else
+            {
+                for(auto& system : _systems)
+                    _pendingUpdates.emplace_back(
+                        [&system, entity, &slot = std::as_const(_entitiesComponentsSlots[entity])]{
+                            system->OnEntityUpdate(entity, slot);
+                        });
+            }
+
         #endif
     }
 
@@ -125,14 +137,12 @@ namespace MyECS
             return 0;
         #else
             if constexpr(!ThreadSafeComponent)
-            {
                 if(!_activeComponentsMask.GetBitState(ID::get<T>()))
                 {
                     _componentStorages[ID::get<T>()] = std::make_unique<ComponentsStorage<components_capacity, BitsStorageType, T, ThreadSafeComponent>>();
                     ++_componentsCount;
                     _activeComponentsMask.Set(ID::get<T>());
                 }
-            }
 
             StorageCaster<T, ThreadSafeComponent>()->AddComponentInstance(entity, std::forward<T>(component));
             return ID::get<T>();
@@ -156,7 +166,8 @@ namespace MyECS
             else { ENTITY_ERROR(entity); }
         #else
             (DetachComponent<Args>(entity), ...);
-            for(auto& system : _systems) system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
+            for(auto& system : _systems)
+                system->OnEntityUpdate(entity, _entitiesComponentsSlots[entity]);
         #endif
     }
 
@@ -326,6 +337,17 @@ namespace MyECS
             _freeEntities.push_back(entity);
             _activeEntities.erase(entity);
         #endif
+    }
+
+    template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>
+    requires std::is_unsigned_v<BitsStorageType>
+    void EntityManager<entities_capacity, components_capacity, BitsStorageType>::ExecPendingUpdates()
+    {
+        while(!_pendingUpdates.empty())
+        {
+            _pendingUpdates.front()();
+            _pendingUpdates.pop_front();
+        }
     }
 
     template<size_t entities_capacity, size_t components_capacity, typename BitsStorageType>

@@ -3,6 +3,8 @@
 
 #include <Inc/ComponentStorage.h>
 #include <Inc/System.h>
+#include <future>
+#include <deque>
 
 namespace MyECS
 {
@@ -68,6 +70,8 @@ namespace MyECS
             template<typename T>
             void PreinitThreadSafeComponentStorage();
 
+            void ExecPendingUpdates();
+
             template<typename ...Args>
             void DetachComponents(Entity);
 
@@ -111,6 +115,7 @@ namespace MyECS
             std::size_t _componentsCount{0};
             Bits<BitsStorageType, components_capacity> _activeComponentsMask;
 
+            std::deque<std::packaged_task<void()>> _pendingUpdates;
             std::vector<std::unique_ptr<System<components_capacity, BitsStorageType>>> _systems;
 
     };
